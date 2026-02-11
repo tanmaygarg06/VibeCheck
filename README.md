@@ -26,7 +26,6 @@
 |---------|-------------|
 | **⚡ Real-Time Analysis** | <500ms response with transformer inference |
 | **🎭 Multi-Emotion Detection** | 8 core emotions + sentiment polarity |
-| **🔐 Secure Authentication** | AWS Cognito JWT tokens |
 | **📈 Historical Tracking** | DynamoDB stores user vibe trends |
 | **🛠 Production API** | Swagger docs, CORS, rate limiting |
 | **💰 Cost Optimized** | ~$0.01/1K requests (1M free tier) |
