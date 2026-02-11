@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>🎯 Vibe Check AI · Student Feedback Intelligence</title>
+    <!-- DEPENDENCIES -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ---------- GLOBAL DESIGN TOKENS ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.25s ease, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Light theme */
+        body.light {
+            --bg-gradient: linear-gradient(145deg, #f6f9fc 0%, #edf1f7 50%, #e6ecf4 100%);
+            --surface: rgba(255, 255, 255, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-soft: #475569;
+            --border-light: rgba(0, 0, 0, 0.08);
+            --glow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            --chart-text: #1e293b;
+            --metric-shadow: 0 20px 35px rgba(99, 102, 241, 0.15);
+            --accent-glow: rgba(99,102,241,0.2);
+            --appreciation: #10b981;
+            --positive: #34d399;
+            --concerns: #ef4444;
+            --complaints: #f97316;
+            --suggestions: #6366f1;
+            --neutral: #8b5cf6;
+        }
+
+        /* Dark theme */
+        body.dark {
+            --bg-gradient: linear-gradient(135deg, #0a0a1a 0%, #10101e 50%, #15152a 100%);
+            --surface: rgba(15, 15, 30, 0.8);
+            --card-bg: rgba(25, 25, 45, 0.7);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --text-soft: rgba(255, 255, 255, 0.7);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --glow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            --chart-text: #f1f5f9;
+            --metric-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            --accent-glow: rgba(99,102,241,0.4);
+            --appreciation: #34d399;
+            --positive: #6ee7b7;
+            --concerns: #f87171;
+            --complaints: #fdba74;
+            --suggestions: #818cf8;
+            --neutral: #a78bfa;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            backdrop-filter: blur(4px);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+
+        /* ----- GLASS PANEL ----- */
+        .glass-panel {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: 32px;
+            box-shadow: var(--glow);
+        }
+
+        /* ----- HEADER ----- */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .brand h1 {
+            font-size: clamp(2.2rem, 6vw, 3.8rem);
+            font-weight: 800;
+            background: linear-gradient(145deg, #2563eb, #7c3aed, #db2777);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        .brand p { 
+            font-size: 1.2rem; 
+            color: var(--text-secondary); 
+        }
+
+        .action-bar { 
+            display: flex; 
+            gap: 14px; 
+            flex-wrap: wrap; 
+        }
+        
+        .theme-btn, .history-btn, .clear-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            backdrop-filter: blur(10px);
+            padding: 12px 22px;
+            border-radius: 40px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+        
+        .theme-btn:hover, .history-btn:hover, .clear-btn:hover, .lang-btn:hover {
+            background: rgba(99,102,241,0.2);
+            border-color: #6366f1;
+            transform: translateY(-3px);
+        }
+
+        /* ----- LANGUAGE DROPDOWN ----- */
+        .lang-dropdown { 
+            position: relative; 
+        }
+        
+        .lang-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            backdrop-filter: blur(10px);
+            padding: 12px 22px;
+            border-radius: 40px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+        
+        .lang-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 58px;
+            min-width: 160px;
+            background: var(--surface);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            padding: 12px;
+            z-index: 1000;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        
+        .lang-menu button {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 12px 20px;
+            text-align: left;
+            color: var(--text-primary);
+            border-radius: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .lang-menu button:hover { 
+            background: rgba(99,102,241,0.2); 
+        }
+
+        /* ----- HISTORY DROPDOWN ----- */
+        .history-dropdown { 
+            position: relative; 
+        }
+        
+        .history-content {
+            display: none; 
+            position: absolute; 
+            right: 0; 
+            top: 58px;
+            min-width: 600px; 
+            max-height: 550px; 
+            overflow-y: auto;
+            background: var(--surface); 
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--border-light); 
+            border-radius: 24px;
+            padding: 24px; 
+            z-index: 1000; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        
+        .history-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-light);
+        }
+        
+        .history-title {
+            font-weight: 700; 
+            font-size: 1.2rem; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .history-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .history-export-btn {
+            background: rgba(16,185,129,0.2);
+            border: 1px solid #10b981;
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        
+        .history-export-btn:hover {
+            background: rgba(16,185,129,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .history-clear-btn {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        
+        .history-clear-btn:hover {
+            background: rgba(239,68,68,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .history-item {
+            padding: 18px; 
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            background: rgba(99,102,241,0.05);
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        
+        .history-item:hover {
+            background: rgba(99,102,241,0.15);
+            border-color: #6366f1;
+            transform: translateX(4px);
+        }
+        
+        .history-item-info {
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .history-item-title {
+            font-weight: 700; 
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .history-item-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+            opacity: 0.8;
+            flex-wrap: wrap;
+        }
+        
+        .history-badge {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .history-badge.appreciation {
+            background: rgba(16,185,129,0.2);
+            color: var(--appreciation);
+        }
+        
+        .history-badge.positive {
+            background: rgba(52,211,153,0.2);
+            color: var(--positive);
+        }
+        
+        .history-badge.concerns {
+            background: rgba(239,68,68,0.2);
+            color: var(--concerns);
+        }
+        
+        .history-badge.complaints {
+            background: rgba(249,115,22,0.2);
+            color: var(--complaints);
+        }
+        
+        .history-badge.suggestions {
+            background: rgba(99,102,241,0.2);
+            color: var(--suggestions);
+        }
+        
+        .history-badge.neutral {
+            background: rgba(139,92,246,0.2);
+            color: var(--neutral);
+        }
+        
+        .restore-btn {
+            background: #6366f1; 
+            border: none; 
+            color: white; 
+            padding: 10px 18px;
+            border-radius: 30px; 
+            font-weight: 600; 
+            font-size: 0.85rem; 
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 12px;
+        }
+        
+        .restore-btn:hover {
+            background: #4f52e0;
+            transform: scale(1.05);
+        }
+        
+        .empty-history {
+            text-align: center; 
+            padding: 40px 20px; 
+            color: var(--text-soft);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ----- INPUT SECTION ----- */
+        .input-elevated { 
+            padding: 40px; 
+            margin-bottom: 40px; 
+            background: var(--card-bg); 
+        }
+        
+        .input-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: baseline; 
+            margin-bottom: 20px; 
+        }
+        
+        .stats-badge {
+            background: rgba(99,102,241,0.3); 
+            padding: 8px 20px; 
+            border-radius: 40px; 
+            font-weight: 600;
+        }
+        
+        .input-section textarea {
+            width: 100%; 
+            height: 200px; 
+            padding: 28px;
+            border: 2px solid var(--border-light); 
+            border-radius: 28px;
+            background: rgba(255,255,255,0.05); 
+            backdrop-filter: blur(10px);
+            color: var(--text-primary); 
+            font-size: 16px; 
+            font-family: 'Inter', monospace;
+            resize: vertical; 
+            line-height: 1.6;
+        }
+        
+        .input-section textarea:focus {
+            border-color: #8b5cf6; 
+            box-shadow: 0 0 0 6px rgba(139,92,246,0.2);
+            outline: none;
+        }
+        
+        .input-section textarea::placeholder {
+            color: var(--text-soft);
+            opacity: 0.8;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(145deg, #10b981, #059669); 
+            color: white; 
+            border: none;
+            padding: 18px 60px; 
+            border-radius: 60px; 
+            font-size: 1.2rem; 
+            font-weight: 700;
+            cursor: pointer; 
+            margin-top: 30px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 16px;
+            box-shadow: 0 18px 35px rgba(16,185,129,0.4); 
+            transition: 0.25s;
+        }
+        
+        .analyze-btn:hover { 
+            transform: scale(1.05) translateY(-5px); 
+            box-shadow: 0 28px 45px rgba(16,185,129,0.6); 
+        }
+
+        /* ----- METRICS CARDS - IMPROVED DOMINANT BOX ----- */
+        .vibe-metrics {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 28px; 
+            margin-bottom: 50px;
+        }
+        
+        .metric-card {
+            background: var(--card-bg); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-light);
+            border-radius: 32px; 
+            padding: 32px 24px; 
+            text-align: center; 
+            position: relative;
+            box-shadow: var(--metric-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+        }
+        
+        .metric-card::after {
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 6px;
+            background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+            border-radius: 32px 32px 0 0;
+        }
+        
+        .metric-value {
+            font-size: clamp(2.5rem, 5vw, 4rem); 
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            word-break: break-word;
+            max-width: 100%;
+        }
+        
+        /* Special styling for dominant card to handle long text */
+        .metric-card:nth-child(2) .metric-value {
+            font-size: clamp(1.5rem, 3.5vw, 2.8rem);
+            background: linear-gradient(145deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 0 8px;
+            line-height: 1.3;
+            text-transform: capitalize;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            letter-spacing: -0.02em;
+        }
+        
+        .metric-label {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* ----- CHART & WORD CLOUD ROW ----- */
+        .viz-row {
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 32px; 
+            margin-bottom: 50px;
+        }
+        
+        .chart-section, .cloud-section {
+            background: var(--card-bg); 
+            backdrop-filter: blur(20px); 
+            border-radius: 36px;
+            padding: 30px; 
+            border: 1px solid var(--border-light);
+        }
+        
+        .chart-container { 
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .chart-container canvas { 
+            max-height: 300px; 
+            max-width: 100%; 
+            margin: 0 auto; 
+        }
+        
+        #wordCloudContainer {
+            width: 100%; 
+            height: 300px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            color: var(--text-primary);
+            flex-wrap: wrap;
+        }
+
+        /* ----- CHART EXPLANATION ----- */
+        .chart-explanation {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(99,102,241,0.08);
+            border-radius: 16px;
+            font-size: 0.9rem;
+            color: var(--text-soft);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #6366f1;
+            flex-wrap: wrap;
+        }
+
+        /* ----- SEARCH & FILTER BAR ----- */
+        .search-section {
+            background: var(--card-bg); 
+            border-radius: 60px; 
+            padding: 12px 24px;
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            margin-bottom: 30px;
+            border: 1px solid var(--border-light);
+        }
+        
+        .search-section input {
+            background: transparent; 
+            border: none; 
+            color: var(--text-primary);
+            font-size: 1.1rem; 
+            width: 100%; 
+            outline: none;
+        }
+        
+        .search-section input::placeholder {
+            color: var(--text-soft);
+        }
+
+        /* ----- ANALYSES GRID - 6 CATEGORIES ----- */
+        .analyses-section {
+            margin-top: 30px;
+        }
+        
+        .analyses-grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 28px;
+        }
+        
+        .analysis-card {
+            background: var(--card-bg); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid var(--border-light);
+            border-radius: 28px; 
+            padding: 26px; 
+            transition: 0.2s; 
+            border-bottom: 4px solid transparent;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .analysis-card:hover { 
+            border-bottom-color: #6366f1; 
+            transform: translateY(-6px); 
+        }
+        
+        .analysis-text {
+            border-left: 6px solid #6366f1; 
+            padding-left: 20px; 
+            margin-bottom: 16px; 
+            font-size: 1.1rem; 
+            font-weight: 500;
+            line-height: 1.5;
+        }
+        
+        .category-badge { 
+            padding: 8px 24px; 
+            border-radius: 50px; 
+            font-weight: 700; 
+            font-size: 0.9rem; 
+            display: inline-block;
+        }
+        
+        .appreciation { 
+            background: rgba(16,185,129,0.2); 
+            color: var(--appreciation); 
+        }
+        
+        .positive { 
+            background: rgba(52,211,153,0.2); 
+            color: var(--positive); 
+        }
+        
+        .concerns { 
+            background: rgba(239,68,68,0.2); 
+            color: var(--concerns); 
+        }
+        
+        .complaints { 
+            background: rgba(249,115,22,0.2); 
+            color: var(--complaints); 
+        }
+        
+        .suggestions { 
+            background: rgba(99,102,241,0.2); 
+            color: var(--suggestions); 
+        }
+        
+        .neutral { 
+            background: rgba(139,92,246,0.2); 
+            color: var(--neutral); 
+        }
+        
+        .confidence-badge {
+            background: rgba(99,102,241,0.1); 
+            padding: 6px 18px; 
+            border-radius: 40px; 
+            font-size: 0.9rem;
+        }
+        
+        .reasoning-text {
+            color: var(--text-soft); 
+            font-size: 0.95rem; 
+            border-top: 1px solid var(--border-light); 
+            padding-top: 16px; 
+            line-height: 1.5;
+        }
+
+        /* ----- LOADING ----- */
+        .loading {
+            display: none; 
+            padding: 60px; 
+            background: var(--surface); 
+            border-radius: 60px;
+            margin: 40px 0; 
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 60px; 
+            height: 60px; 
+            border: 5px solid rgba(99,102,241,0.2);
+            border-top: 5px solid #6366f1; 
+            border-radius: 50%; 
+            animation: spin 0.8s infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        /* ----- FOOTER ----- */
+        .footer-actions { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 50px; 
+            flex-wrap: wrap; 
+            gap: 20px; 
+        }
+        
+        .btn-group { 
+            display: flex; 
+            gap: 14px; 
+            flex-wrap: wrap;
+        }
+        
+        .export-btn, .trend-btn, .history-export-all-btn { 
+            background: rgba(99,102,241,0.2); 
+            border: 1px solid #6366f1; 
+            padding: 12px 28px;
+            border-radius: 40px; 
+            font-weight: 600; 
+            color: var(--text-primary); 
+            cursor: pointer;
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            transition: 0.2s;
+        }
+        
+        .export-btn:hover, .trend-btn:hover, .history-export-all-btn:hover {
+            background: rgba(99,102,241,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* ----- TREND CONTAINER ----- */
+        #trendContainer {
+            margin-top: 40px; 
+            background: var(--card-bg); 
+            border-radius: 40px; 
+            padding: 30px;
+            border: 1px solid var(--border-light);
+        }
+
+        /* ----- EMPTY STATES ----- */
+        .empty-state {
+            text-align: center; 
+            padding: 40px; 
+            color: var(--text-soft);
+        }
+
+        /* ----- ERROR STATES ----- */
+        .error-container {
+            grid-column: 1/-1; 
+            text-align: center; 
+            padding: 50px; 
+            background: rgba(239,68,68,0.1); 
+            border-radius: 40px;
+            border: 1px solid rgba(239,68,68,0.2);
+        }
+
+        .retry-btn {
+            background: #6366f1; 
+            border: none; 
+            color: white; 
+            padding: 12px 30px; 
+            border-radius: 40px; 
+            cursor: pointer; 
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            transition: 0.2s;
+        }
+
+        .retry-btn:hover {
+            background: #4f52e0;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 900px) { 
+            .viz-row { 
+                grid-template-columns: 1fr; 
+            }
+            .history-content { 
+                min-width: 350px; 
+                right: -20px;
+            }
+            .metric-card:nth-child(2) .metric-value {
+                font-size: clamp(1.3rem, 3vw, 2.2rem);
+            }
+        }
+    </style>
+</head>
+<body class="dark">
+    <div class="container">
+
+        <!-- ========== HEADER ========= -->
+        <div class="header">
+            <div class="brand">
+                <h1 data-i18n="title">🎯 Vibe Check AI</h1>
+                <p data-i18n="subtitle">Student Feedback Intelligence</p>
+            </div>
+            <div class="action-bar">
+                <!-- LANGUAGE DROPDOWN -->
+                <div class="lang-dropdown">
+                    <button class="lang-btn" id="langDropdownBtn">
+                        <i data-lucide="languages"></i> <span id="currentLang">EN</span>
+                    </button>
+                    <div id="langMenu" class="lang-menu">
+                        <button onclick="setLanguage('en')"><span>🇺🇸</span> English</button>
+                        <button onclick="setLanguage('es')"><span>🇪🇸</span> Español</button>
+                        <button onclick="setLanguage('fr')"><span>🇫🇷</span> Français</button>
+                    </div>
+                </div>
+
+                <button class="theme-btn" id="themeToggle">
+                    <i data-lucide="moon"></i> <span id="themeLabel">Dark</span>
+                </button>
+                
+                <!-- HISTORY DROPDOWN -->
+                <div class="history-dropdown">
+                    <button class="history-btn" id="historyButton">
+                        <i data-lucide="clock"></i> History 
+                        <span id="historyCount" style="background:#6366f1; padding:4px 12px; border-radius:40px;">0</span>
+                    </button>
+                    <div id="historyPanel" class="history-content glass-panel">
+                        <div class="history-header">
+                            <span class="history-title">
+                                <i data-lucide="archive"></i> Analysis History
+                            </span>
+                            <div class="history-actions">
+                                <button id="historyExportAllBtn" class="history-export-btn">
+                                    <i data-lucide="file-spreadsheet"></i> Export All
+                                </button>
+                                <button id="historyClearAllBtn" class="history-clear-btn">
+                                    <i data-lucide="trash-2"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div id="historyList" class="history-list"></div>
+                    </div>
+                </div>
+                
+                <button class="clear-btn" id="clearInputBtn">
+                    <i data-lucide="eraser"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== INPUT CARD ========= -->
+        <div class="input-section glass-panel input-elevated">
+            <div class="input-header">
+                <span style="font-weight:600; font-size:1.5rem;" data-i18n="pasteFeedback">📊 Paste feedback</span>
+                <span class="stats-badge" id="lineCountBadge">0 lines</span>
+            </div>
+            <textarea id="feedbackInput" placeholder="• Course structure is amazing but more practice problems needed&#10;• I love the real-world case studies!&#10;• Professor explains well but sometimes too fast&#10;• Could we have more group discussions?&#10;• The lab sessions are super helpful&#10;• hello"></textarea>
+            <button class="analyze-btn" id="analyzeBtn">
+                <i data-lucide="zap"></i> <span data-i18n="analyze">Analyze vibe</span>
+            </button>
+        </div>
+
+        <!-- ========== LOADING ========= -->
+        <div class="loading glass-panel" id="loading">
+            <div class="spinner"></div>
+            <p style="font-size:1.4rem; font-weight:600;" data-i18n="analyzing">Claude is reading the vibe...</p>
+        </div>
+
+        <!-- ========== RESULTS DASHBOARD ========= -->
+        <div class="results" id="results" style="display: none;">
+            <!-- VIBE METRICS -->
+            <div class="vibe-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="vibeScore">-</div>
+                    <div class="metric-label" data-i18n="vibeScore">Vibe Score</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="dominantCategory">-</div>
+                    <div class="metric-label" data-i18n="dominant">Dominant</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="totalFeedbackCount">-</div>
+                    <div class="metric-label" data-i18n="feedbacks">Feedbacks</div>
+                </div>
+            </div>
+
+            <!-- VISUALIZATION ROW: CHART + WORD CLOUD -->
+            <div class="viz-row">
+                <div class="chart-section glass-panel">
+                    <h3 style="margin-bottom: 20px; font-size:1.6rem; background: linear-gradient(145deg, #a78bfa, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="sentimentPulse">
+                        sentiment pulse
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                    <!-- CHART EXPLANATION -->
+                    <div class="chart-explanation" id="chartExplanation">
+                        <i data-lucide="info" style="width: 18px; height: 18px;"></i>
+                        <span>6 Categories: Appreciation, Positive, Concerns, Complaints, Suggestions, Neutral</span>
+                    </div>
+                </div>
+                <div class="cloud-section glass-panel">
+                    <h3 style="margin-bottom: 20px; font-size:1.6rem; background: linear-gradient(145deg, #60a5fa, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="wordCloud">
+                        word cloud
+                    </h3>
+                    <div id="wordCloudContainer">✨ Generate cloud by analyzing</div>
+                </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div class="search-section glass-panel">
+                <i data-lucide="search"></i>
+                <input type="text" id="searchFilter" placeholder="🔍 Filter feedback or category..." onkeyup="filterAnalyses()">
+                <i data-lucide="filter"></i>
+            </div>
+
+            <!-- INDIVIDUAL ANALYSES -->
+            <div class="analyses-section">
+                <div style="display:flex; align-items: baseline; justify-content: space-between; margin-bottom: 28px;">
+                    <h3 style="font-size:1.9rem; font-weight:700; background: linear-gradient(145deg, #6366f1, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="deepDive">
+                        🔬 deep dive
+                    </h3>
+                    <span style="background: var(--card-bg); padding: 8px 24px; border-radius: 40px; font-weight:500;" data-i18n="claudeReasoning">
+                        Claude 3.5 reasoning
+                    </span>
+                </div>
+                <div class="analyses-grid" id="analyses"></div>
+            </div>
+
+            <!-- EXPORT & TRENDS BUTTONS -->
+            <div class="footer-actions">
+                <div class="btn-group">
+                    <button class="export-btn" onclick="exportCurrentResults('json')">
+                        <i data-lucide="file-json"></i> Export JSON
+                    </button>
+                    <button class="export-btn" onclick="exportCurrentResults('csv')">
+                        <i data-lucide="file-text"></i> Export CSV
+                    </button>
+                    <button class="history-export-all-btn" onclick="exportAllHistory()">
+                        <i data-lucide="database"></i> Export All History
+                    </button>
+                    <button class="trend-btn" onclick="showTrendChart()">
+                        <i data-lucide="trending-up"></i> Trends
+                    </button>
+                </div>
+                <span style="opacity:0.6; display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="api"></i> endpoint: /Prod/analyze
+                </span>
+            </div>
+        </div>
+
+        <!-- TREND CONTAINER (hidden by default) -->
+        <div id="trendContainer" style="display:none;"></div>
+    </div>
+
+    <script>
+        // ---------- CONFIG ----------
+        const API_URL = 'https://2demvz09h9.execute-api.us-east-1.amazonaws.com/Prod/analyze';
+        let chartInstance = null;
+        let currentAnalysesData = [];
+
+        // ---------- CATEGORY CONFIGURATION - 6 CATEGORIES WITH STRICT SEPARATION ----------
+        const CATEGORIES = {
+            APPRECIATION: 'Appreciation',
+            POSITIVE: 'Positive',
+            CONCERNS: 'Concerns',
+            COMPLAINTS: 'Complaints',
+            SUGGESTIONS: 'Suggestions',
+            NEUTRAL: 'Neutral'
+        };
+
+        const CATEGORY_COLORS = {
+            'Appreciation': '#10b981',
+            'Positive': '#34d399',
+            'Concerns': '#ef4444',
+            'Complaints': '#f97316',
+            'Suggestions': '#6366f1',
+            'Neutral': '#8b5cf6'
+        };
+
+        // ---------- FIXED KEYWORDS - NO OVERLAP, STRICT SEPARATION ----------
+        const CATEGORY_KEYWORDS = {
+            [CATEGORIES.APPRECIATION]: [
+                'love', 'amazing', 'excellent', 'awesome', 'best', 'perfect', 
+                'fantastic', 'wonderful', 'brilliant', 'outstanding', 'superb',
+                'exceptional', 'incredible', 'phenomenal', 'magnificent'
+            ],
+            [CATEGORIES.POSITIVE]: [
+                'good', 'nice', 'helpful', 'useful', 'clear', 'easy', 'enjoy', 
+                'like', 'effective', 'valuable', 'great', 'decent', 'solid',
+                'pleasant', 'satisfied', 'happy', 'glad'
+            ],
+            [CATEGORIES.CONCERNS]: [
+                'problem', 'issue', 'hard', 'difficult', 'confusing', 'unclear', 
+                'struggle', 'tough', 'challenging', 'complicated', 'complex',
+                'ambiguous', 'vague', 'uncertain', 'unsure'
+            ],
+            [CATEGORIES.COMPLAINTS]: [
+                'bad', 'poor', 'terrible', 'awful', 'hate', 'worst', 'useless', 
+                'waste', 'annoying', 'frustrating', 'horrible', 'disappointing',
+                'pathetic', 'ridiculous', 'stupid', 'dumb', 'crap', 'garbage'
+            ],
+            [CATEGORIES.SUGGESTIONS]: [
+                'suggest', 'could', 'would', 'should', 'maybe', 'need', 'more', 
+                'less', 'add', 'change', 'improve', 'better', 'enhance', 'update',
+                'modify', 'revise', 'consider', 'recommend', 'propose'
+            ],
+            [CATEGORIES.NEUTRAL]: [
+                'hello', 'hi', 'hey', 'thanks', 'thank', 'ok', 'okay', 'fine', 
+                'alright', 'feedback', 'comment', 'note', 'observation',
+                'greetings', 'howdy', 'sup', 'yeah', 'yep', 'nope', 'no', 'yes'
+            ]
+        };
+
+        // ---------- EXACT MATCH WORDS (PREVENT PARTIAL MATCHES) ----------
+        const EXACT_MATCH_WORDS = {
+            'appreciation': ['love', 'amazing', 'excellent'],
+            'positive': ['good', 'nice', 'great'],
+            'neutral': ['hello', 'hi', 'hey', 'ok', 'okay']
+        };
+
+        // ---------- MULTI-LANGUAGE DICTIONARY ----------
+        const translations = {
+            en: { 
+                title: '🎯 Vibe Check AI', 
+                subtitle: 'Student Feedback Intelligence', 
+                analyze: 'Analyze vibe', 
+                vibeScore: 'Vibe Score', 
+                dominant: 'Dominant', 
+                feedbacks: 'Feedbacks', 
+                sentimentPulse: 'sentiment pulse', 
+                wordCloud: 'word cloud', 
+                deepDive: '🔬 deep dive', 
+                claudeReasoning: 'Claude 3.5 reasoning', 
+                pasteFeedback: '📊 Paste feedback', 
+                analyzing: 'Claude is reading the vibe...' 
+            },
+            es: { 
+                title: '🎯 Análisis de Ambiente', 
+                subtitle: 'Inteligencia de Retroalimentación', 
+                analyze: 'Analizar', 
+                vibeScore: 'Puntuación', 
+                dominant: 'Dominante', 
+                feedbacks: 'Comentarios', 
+                sentimentPulse: 'pulso sentimental', 
+                wordCloud: 'nube de palabras', 
+                deepDive: '🔬 inmersión', 
+                claudeReasoning: 'Razonamiento IA', 
+                pasteFeedback: '📊 Pegar comentarios', 
+                analyzing: 'Analizando con IA...' 
+            },
+            fr: { 
+                title: '🎯 Analyse d\'Ambiance', 
+                subtitle: 'Intelligence des Retours', 
+                analyze: 'Analyser', 
+                vibeScore: 'Score', 
+                dominant: 'Principal', 
+                feedbacks: 'Retours', 
+                sentimentPulse: 'pouls sentimental', 
+                wordCloud: 'nuage de mots', 
+                deepDive: '🔬 plongée', 
+                claudeReasoning: 'Raisonnement IA', 
+                pasteFeedback: '📊 Coller les retours', 
+                analyzing: 'Claude analyse...' 
+            }
+        };
+        let currentLang = 'en';
+
+        // ---------- LANGUAGE FUNCTIONS ----------
+        window.setLanguage = function(lang) {
+            currentLang = lang;
+            document.getElementById('currentLang').innerText = lang.toUpperCase();
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (translations[lang]?.[key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translations[lang][key];
+                    } else {
+                        el.innerText = translations[lang][key];
+                    }
+                }
+            });
+            document.getElementById('langMenu').style.display = 'none';
+            lucide.createIcons();
+        };
+
+        // ---------- FIXED CATEGORIZATION FUNCTION - NO MORE "HELLO" AS APPRECIATION ----------
+        function categorizeFeedback(text) {
+            if (!text) return CATEGORIES.NEUTRAL;
+            
+            const lowerText = text.toLowerCase().trim();
+            const words = lowerText.split(/\s+/);
+            
+            // 1. FIRST CHECK FOR NEUTRAL - GREETINGS AND SIMPLE WORDS
+            if (words.length === 1) {
+                const singleWord = words[0];
+                // Single word greetings are ALWAYS neutral
+                if (['hello', 'hi', 'hey', 'sup', 'howdy', 'greetings', 'ok', 'okay', 'fine', 'alright', 'thanks', 'thank', 'yes', 'no', 'yep', 'nope'].includes(singleWord)) {
+                    return CATEGORIES.NEUTRAL;
+                }
+            }
+            
+            // Check for neutral phrases
+            if (CATEGORY_KEYWORDS[CATEGORIES.NEUTRAL].some(word => {
+                // Exact word matching to prevent "hello" matching "love" etc
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            })) {
+                return CATEGORIES.NEUTRAL;
+            }
+            
+            // 2. CHECK FOR COMPLAINTS (STRONG NEGATIVE) - HIGHEST PRIORITY
+            if (CATEGORY_KEYWORDS[CATEGORIES.COMPLAINTS].some(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            })) {
+                return CATEGORIES.COMPLAINTS;
+            }
+            
+            // 3. CHECK FOR APPRECIATION (STRONG POSITIVE)
+            if (CATEGORY_KEYWORDS[CATEGORIES.APPRECIATION].some(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            })) {
+                return CATEGORIES.APPRECIATION;
+            }
+            
+            // 4. CHECK FOR CONCERNS (MILD NEGATIVE)
+            if (CATEGORY_KEYWORDS[CATEGORIES.CONCERNS].some(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            })) {
+                return CATEGORIES.CONCERNS;
+            }
+            
+            // 5. CHECK FOR SUGGESTIONS
+            if (CATEGORY_KEYWORDS[CATEGORIES.SUGGESTIONS].some(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            })) {
+                return CATEGORIES.SUGGESTIONS;
+            }
+            
+            // 6. CHECK FOR POSITIVE (MILD POSITIVE)
+            if (CATEGORY_KEYWORDS[CATEGORIES.POSITIVE].some(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(lowerText);
+            })) {
+                return CATEGORIES.POSITIVE;
+            }
+            
+            // 7. DEFAULT TO NEUTRAL FOR EVERYTHING ELSE
+            return CATEGORIES.NEUTRAL;
+        }
+
+        // ---------- CALCULATE VIBE SCORE ----------
+        function calculateVibeScore(distribution, total) {
+            if (total === 0) return 75;
+            
+            const weights = {
+                [CATEGORIES.APPRECIATION]: 1.0,
+                [CATEGORIES.POSITIVE]: 0.8,
+                [CATEGORIES.SUGGESTIONS]: 0.6,
+                [CATEGORIES.NEUTRAL]: 0.5,
+                [CATEGORIES.CONCERNS]: 0.3,
+                [CATEGORIES.COMPLAINTS]: 0.1
+            };
+            
+            let weightedSum = 0;
+            let totalWeight = 0;
+            
+            Object.keys(distribution).forEach(cat => {
+                const count = distribution[cat] || 0;
+                const weight = weights[cat] || 0.5;
+                weightedSum += count * weight;
+                totalWeight += count;
+            });
+            
+            const score = Math.round((weightedSum / totalWeight) * 100);
+            return Math.min(98, Math.max(60, score));
+        }
+
+        // ---------- HISTORY MANAGEMENT ----------
+        let analysisHistory = [];
+        
+        function loadHistoryFromStorage() {
+            try {
+                const stored = localStorage.getItem('vibeCheckHistory');
+                if (stored) { 
+                    analysisHistory = JSON.parse(stored); 
+                    console.log('Loaded history:', analysisHistory.length, 'items');
+                }
+            } catch(e) { 
+                console.error('Error loading history:', e);
+                analysisHistory = []; 
+            }
+            updateHistoryUI();
+        }
+        
+        function saveHistoryToStorage() { 
+            localStorage.setItem('vibeCheckHistory', JSON.stringify(analysisHistory)); 
+            console.log('Saved history:', analysisHistory.length, 'items');
+            updateHistoryUI(); 
+        }
+        
+        function addAnalysisToHistory(overall, feedbacksCount, analyses) {
+            const distribution = {
+                [CATEGORIES.APPRECIATION]: overall?.distribution?.[CATEGORIES.APPRECIATION] || 0,
+                [CATEGORIES.POSITIVE]: overall?.distribution?.[CATEGORIES.POSITIVE] || 0,
+                [CATEGORIES.CONCERNS]: overall?.distribution?.[CATEGORIES.CONCERNS] || 0,
+                [CATEGORIES.COMPLAINTS]: overall?.distribution?.[CATEGORIES.COMPLAINTS] || 0,
+                [CATEGORIES.SUGGESTIONS]: overall?.distribution?.[CATEGORIES.SUGGESTIONS] || 0,
+                [CATEGORIES.NEUTRAL]: overall?.distribution?.[CATEGORIES.NEUTRAL] || 0
+            };
+            
+            const entry = { 
+                id: Date.now(), 
+                timestamp: new Date().toLocaleString(), 
+                isoTime: new Date().toISOString(),
+                vibeScore: overall?.vibeScore || calculateVibeScore(distribution, feedbacksCount), 
+                dominant: overall?.dominant || CATEGORIES.NEUTRAL, 
+                total: feedbacksCount, 
+                distribution: distribution,
+                analyses: analyses || []
+            };
+            
+            analysisHistory.unshift(entry); 
+            if (analysisHistory.length > 50) analysisHistory.pop();
+            saveHistoryToStorage();
+        }
+        
+        function updateHistoryUI() {
+            const historyListDiv = document.getElementById('historyList');
+            const countSpan = document.getElementById('historyCount');
+            if (countSpan) countSpan.textContent = analysisHistory.length;
+            
+            if (!analysisHistory || analysisHistory.length === 0) { 
+                historyListDiv.innerHTML = '<div class="empty-history"><i data-lucide="archive" style="width: 32px; height: 32px; opacity:0.5;"></i><span style="font-size:1.1rem;">✨ No history yet</span><span style="font-size:0.9rem; opacity:0.7;">Your analysis history will appear here</span></div>'; 
+                lucide.createIcons();
+                return; 
+            }
+            
+            let html = '';
+            analysisHistory.slice(0, 15).forEach(item => { 
+                const dominantLower = (item.dominant || CATEGORIES.NEUTRAL).toLowerCase();
+                let badgeClass = 'neutral';
+                if (dominantLower.includes('appreciation')) badgeClass = 'appreciation';
+                else if (dominantLower.includes('positive')) badgeClass = 'positive';
+                else if (dominantLower.includes('concern')) badgeClass = 'concerns';
+                else if (dominantLower.includes('complaint')) badgeClass = 'complaints';
+                else if (dominantLower.includes('suggestion')) badgeClass = 'suggestions';
+                
+                const dist = item.distribution || {
+                    [CATEGORIES.APPRECIATION]: 0,
+                    [CATEGORIES.POSITIVE]: 0,
+                    [CATEGORIES.CONCERNS]: 0,
+                    [CATEGORIES.COMPLAINTS]: 0,
+                    [CATEGORIES.SUGGESTIONS]: 0,
+                    [CATEGORIES.NEUTRAL]: 0
+                };
+                
+                html += `<div class="history-item" onclick="restoreHistoryItem(${item.id})">
+                            <div class="history-item-info">
+                                <div class="history-item-title">
+                                    <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i>
+                                    Vibe: ${item.vibeScore || '75'}
+                                    <span class="history-badge ${badgeClass}">${item.dominant || CATEGORIES.NEUTRAL}</span>
+                                </div>
+                                <div class="history-item-meta">
+                                    <span><i data-lucide="message-circle" style="width: 14px; height: 14px;"></i> ${item.total || 0} feedbacks</span>
+                                    <span><i data-lucide="clock" style="width: 14px; height: 14px;"></i> ${item.timestamp || ''}</span>
+                                    <span><i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i> 
+                                        A:${dist[CATEGORIES.APPRECIATION] || 0} 
+                                        P:${dist[CATEGORIES.POSITIVE] || 0}
+                                        C:${dist[CATEGORIES.CONCERNS] || 0} 
+                                        CP:${dist[CATEGORIES.COMPLAINTS] || 0}
+                                        S:${dist[CATEGORIES.SUGGESTIONS] || 0} 
+                                        N:${dist[CATEGORIES.NEUTRAL] || 0}
+                                    </span>
+                                </div>
+                            </div>
+                            <button class="restore-btn" onclick="event.stopPropagation(); restoreHistoryItem(${item.id})">
+                                <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i> Load
+                            </button>
+                        </div>`; 
+            });
+            historyListDiv.innerHTML = html; 
+            lucide.createIcons();
+        }
+        
+        window.restoreHistoryItem = function(id) {
+            console.log('Restoring history item:', id);
+            const entry = analysisHistory.find(e => e.id === id); 
+            if (!entry) {
+                alert('History item not found');
+                return;
+            }
+            
+            document.getElementById('vibeScore').textContent = entry.vibeScore || '75';
+            
+            const dominantEl = document.getElementById('dominantCategory');
+            dominantEl.textContent = entry.dominant || CATEGORIES.NEUTRAL;
+            
+            if (entry.dominant.length > 12) {
+                dominantEl.style.fontSize = 'clamp(1.3rem, 3vw, 2.2rem)';
+            } else if (entry.dominant.length > 8) {
+                dominantEl.style.fontSize = 'clamp(1.6rem, 3.5vw, 2.8rem)';
+            } else {
+                dominantEl.style.fontSize = 'clamp(1.8rem, 4vw, 3.2rem)';
+            }
+            
+            document.getElementById('totalFeedbackCount').textContent = entry.total || '0';
+            document.getElementById('results').style.display = 'block'; 
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('historyPanel').style.display = 'none';
+            document.getElementById('trendContainer').style.display = 'none';
+            
+            // Restore chart
+            if (entry.distribution) {
+                if (chartInstance) {
+                    try { chartInstance.destroy(); } catch(e) {}
+                    chartInstance = null;
+                }
+                
+                const ctx = document.getElementById('sentimentChart').getContext('2d');
+                const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary');
+                
+                const distribution = entry.distribution;
+                const labels = Object.keys(distribution).filter(key => distribution[key] > 0);
+                const data = labels.map(key => distribution[key]);
+                const backgroundColors = labels.map(key => CATEGORY_COLORS[key] || '#8b5cf6');
+                
+                chartInstance = new Chart(ctx, { 
+                    type: 'doughnut', 
+                    data: { 
+                        labels: labels, 
+                        datasets: [{ 
+                            data: data, 
+                            backgroundColor: backgroundColors,
+                            borderWidth: 0 
+                        }] 
+                    }, 
+                    options: { 
+                        cutout: '70%',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                position: 'bottom',
+                                labels: { 
+                                    color: textColor,
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    padding: 16
+                                } 
+                            }
+                        } 
+                    } 
+                });
+            }
+            
+            // Restore analyses
+            if (entry.analyses && entry.analyses.length > 0) {
+                currentAnalysesData = entry.analyses;
+                renderAnalyses(entry.analyses);
+            }
+            
+            // Update chart explanation
+            const explanationEl = document.getElementById('chartExplanation');
+            if (explanationEl) {
+                const dist = entry.distribution || {};
+                const parts = [];
+                if (dist[CATEGORIES.APPRECIATION]) parts.push(`👍 A:${dist[CATEGORIES.APPRECIATION]}`);
+                if (dist[CATEGORIES.POSITIVE]) parts.push(`😊 P:${dist[CATEGORIES.POSITIVE]}`);
+                if (dist[CATEGORIES.SUGGESTIONS]) parts.push(`💡 S:${dist[CATEGORIES.SUGGESTIONS]}`);
+                if (dist[CATEGORIES.NEUTRAL]) parts.push(`😐 N:${dist[CATEGORIES.NEUTRAL]}`);
+                if (dist[CATEGORIES.CONCERNS]) parts.push(`⚠️ C:${dist[CATEGORIES.CONCERNS]}`);
+                if (dist[CATEGORIES.COMPLAINTS]) parts.push(`❌ CP:${dist[CATEGORIES.COMPLAINTS]}`);
+                
+                explanationEl.innerHTML = `<i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i>
+                                          <span>Distribution: ${parts.join(' | ')}</span>`;
+                lucide.createIcons();
+            }
+        };
+        
+        window.clearAllHistory = function() { 
+            analysisHistory = []; 
+            localStorage.removeItem('vibeCheckHistory'); 
+            updateHistoryUI();
+        };
+
+        // ---------- EXPORT ALL HISTORY TO CSV ----------
+        window.exportAllHistory = function() {
+            if (!analysisHistory || analysisHistory.length === 0) {
+                alert('No history available to export');
+                return;
+            }
+            
+            try {
+                let csv = 'Session ID,Timestamp,Vibe Score,Dominant Category,Total Feedbacks,Appreciation %,Positive %,Concerns %,Complaints %,Suggestions %,Neutral %,Appreciation Count,Positive Count,Concerns Count,Complaints Count,Suggestions Count,Neutral Count\n';
+                
+                analysisHistory.forEach((entry, index) => {
+                    const dist = entry.distribution || {
+                        [CATEGORIES.APPRECIATION]: 0,
+                        [CATEGORIES.POSITIVE]: 0,
+                        [CATEGORIES.CONCERNS]: 0,
+                        [CATEGORIES.COMPLAINTS]: 0,
+                        [CATEGORIES.SUGGESTIONS]: 0,
+                        [CATEGORIES.NEUTRAL]: 0
+                    };
+                    
+                    const total = entry.total || 0;
+                    const appreciationPct = total > 0 ? Math.round((dist[CATEGORIES.APPRECIATION] || 0) / total * 100) : 0;
+                    const positivePct = total > 0 ? Math.round((dist[CATEGORIES.POSITIVE] || 0) / total * 100) : 0;
+                    const concernsPct = total > 0 ? Math.round((dist[CATEGORIES.CONCERNS] || 0) / total * 100) : 0;
+                    const complaintsPct = total > 0 ? Math.round((dist[CATEGORIES.COMPLAINTS] || 0) / total * 100) : 0;
+                    const suggestionsPct = total > 0 ? Math.round((dist[CATEGORIES.SUGGESTIONS] || 0) / total * 100) : 0;
+                    const neutralPct = total > 0 ? Math.round((dist[CATEGORIES.NEUTRAL] || 0) / total * 100) : 0;
+                    
+                    csv += `${entry.id || index + 1},${entry.timestamp || ''},${entry.vibeScore || 75},${entry.dominant || CATEGORIES.NEUTRAL},${entry.total || 0},${appreciationPct}%,${positivePct}%,${concernsPct}%,${complaintsPct}%,${suggestionsPct}%,${neutralPct}%,${dist[CATEGORIES.APPRECIATION] || 0},${dist[CATEGORIES.POSITIVE] || 0},${dist[CATEGORIES.CONCERNS] || 0},${dist[CATEGORIES.COMPLAINTS] || 0},${dist[CATEGORIES.SUGGESTIONS] || 0},${dist[CATEGORIES.NEUTRAL] || 0}\n`;
+                });
+                
+                const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); 
+                a.href = url; 
+                a.download = `vibe-history-export-${new Date().toISOString().slice(0,10)}.csv`; 
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
+            } catch(e) {
+                console.error('Export error:', e);
+                alert('Failed to export history: ' + e.message);
+            }
+        };
+
+        // ---------- EXPORT CURRENT RESULTS ----------
+        window.exportCurrentResults = function(format) {
+            try {
+                let data = { 
+                    timestamp: new Date().toISOString(), 
+                    vibeScore: document.getElementById('vibeScore')?.textContent || '75', 
+                    dominant: document.getElementById('dominantCategory')?.textContent || CATEGORIES.NEUTRAL, 
+                    total: document.getElementById('totalFeedbackCount')?.textContent || '0', 
+                    distribution: (chartInstance && chartInstance.data) ? chartInstance.data.datasets[0].data : [], 
+                    distributionLabels: (chartInstance && chartInstance.data) ? chartInstance.data.labels : [],
+                    analyses: currentAnalysesData || [] 
+                }; 
+                
+                const filename = `vibe-analysis-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}`;
+                
+                if (format === 'json') {
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob); 
+                    const a = document.createElement('a'); 
+                    a.href = url; 
+                    a.download = `${filename}.json`; 
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                } else if (format === 'csv') {
+                    let csv = 'Feedback,Category,Confidence,Reasoning\n';
+                    (currentAnalysesData || []).forEach(a => { 
+                        const text = (a.text || a.feedback || '').replace(/"/g, '""');
+                        const category = a.category || CATEGORIES.NEUTRAL;
+                        const confidence = a.confidence || a.confidence_score || 85;
+                        const reasoning = (a.reasoning || a.explanation || '').replace(/"/g, '""');
+                        csv += `"${text}",${category},${confidence},"${reasoning}"\n`; 
+                    });
+                    
+                    const summary = `Vibe Score,${data.vibeScore}\nDominant,${data.dominant}\nTotal Feedbacks,${data.total}\nTimestamp,${data.timestamp}\n\n${csv}`;
+                    
+                    const blob = new Blob(["\ufeff" + summary], { type: 'text/csv;charset=utf-8;' }); 
+                    const a = document.createElement('a'); 
+                    a.href = URL.createObjectURL(blob); 
+                    a.download = `${filename}.csv`; 
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                }
+            } catch(e) {
+                console.error('Export error:', e);
+                alert('Failed to export data: ' + e.message);
+            }
+        };
+
+        // ---------- RENDER ANALYSES ----------
+        function renderAnalyses(analysesArray) {
+            if (!analysesArray || analysesArray.length === 0) {
+                document.getElementById('analyses').innerHTML = '<div class="empty-state">No analyses available</div>';
+                return;
+            }
+            
+            const analysesHtml = analysesArray.map((a) => {
+                const cat = a.category || CATEGORIES.NEUTRAL;
+                let catClass = 'neutral';
+                
+                if (cat === CATEGORIES.APPRECIATION) {
+                    catClass = 'appreciation';
+                } else if (cat === CATEGORIES.POSITIVE) {
+                    catClass = 'positive';
+                } else if (cat === CATEGORIES.CONCERNS) {
+                    catClass = 'concerns';
+                } else if (cat === CATEGORIES.COMPLAINTS) {
+                    catClass = 'complaints';
+                } else if (cat === CATEGORIES.SUGGESTIONS) {
+                    catClass = 'suggestions';
+                }
+                
+                const displayText = (a.text || a.feedback || '').substring(0, 200);
+                
+                return `<div class="analysis-card">
+                            <div class="analysis-text">
+                                “${displayText}${displayText.length >= 200 ? '...' : ''}”
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 12px;">
+                                <span class="category-badge ${catClass}">${cat}</span>
+                                <span class="confidence-badge">
+                                    ${a.confidence || a.confidence_score || 85}% confidence
+                                </span>
+                            </div>
+                            <div class="reasoning-text">
+                                🧠 ${a.reasoning || a.explanation || 'AI-powered sentiment analysis'}
+                            </div>
+                        </div>`;
+            }).join('');
+            
+            document.getElementById('analyses').innerHTML = analysesHtml;
+        }
+
+        // ---------- WORD CLOUD GENERATION ----------
+        function generateWordCloud(feedbacks) {
+            const container = document.getElementById('wordCloudContainer');
+            
+            if (!feedbacks || feedbacks.length === 0) {
+                container.innerHTML = '✨ No feedback to analyze';
+                return;
+            }
+            
+            const stopwords = ['the','a','an','and','or','but','in','on','at','to','for','of','with','by','is','are','was','were','be','been','this','that','it','from','as','have','has','had','i','you','we','they','he','she','not','can','will','just','very','too','much','more','all','some', 'course', 'class', 'lecture', 'professor', 'teacher', 'student', 'feedback'];
+            
+            try {
+                const words = feedbacks.join(' ')
+                    .toLowerCase()
+                    .replace(/[^\w\s]/g, '')
+                    .split(/\s+/)
+                    .filter(w => w.length > 2 && !stopwords.includes(w) && !['hello', 'hi', 'hey'].includes(w));
+                
+                const freq = {};
+                words.forEach(w => freq[w] = (freq[w] || 0) + 1);
+                
+                const wordArray = Object.entries(freq)
+                    .map(([text, size]) => ({ 
+                        text, 
+                        size: Math.min(20 + size * 3, 60) 
+                    }))
+                    .sort((a,b) => b.size - a.size)
+                    .slice(0, 25);
+                
+                if (wordArray.length === 0) { 
+                    container.innerHTML = '✨ Not enough words for cloud'; 
+                    return; 
+                }
+                
+                container.innerHTML = '';
+                
+                try {
+                    const layout = d3.layout.cloud()
+                        .size([450, 250])
+                        .words(wordArray)
+                        .padding(5)
+                        .rotate(() => 0)
+                        .font('Inter')
+                        .fontSize(d => d.size)
+                        .on('end', drawWordCloud);
+                    layout.start();
+                } catch(e) {
+                    console.error('Word cloud error:', e);
+                    showWordList(wordArray);
+                }
+            } catch(e) {
+                container.innerHTML = '✨ Word cloud generation failed';
+            }
+            
+            function drawWordCloud(words) {
+                d3.select('#wordCloudContainer').html('');
+                const svg = d3.select('#wordCloudContainer')
+                    .append('svg')
+                    .attr('width', 470)
+                    .attr('height', 270)
+                    .append('g')
+                    .attr('transform', 'translate(235,125)');
+                
+                svg.selectAll('text')
+                    .data(words)
+                    .enter()
+                    .append('text')
+                    .style('font-size', d => d.size + 'px')
+                    .style('font-weight', '600')
+                    .style('fill', (d,i) => {
+                        const colors = ['#10b981', '#34d399', '#6366f1', '#8b5cf6', '#f97316', '#ef4444', '#ec4899'];
+                        return colors[i % colors.length];
+                    })
+                    .style('font-family', 'Inter')
+                    .attr('text-anchor', 'middle')
+                    .attr('transform', d => `translate(${d.x},${d.y}) rotate(${d.rotate || 0})`)
+                    .text(d => d.text);
+            }
+            
+            function showWordList(words) {
+                let html = '<div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center;">';
+                words.slice(0, 20).forEach((w, i) => {
+                    const colors = ['#10b981', '#34d399', '#6366f1', '#8b5cf6', '#f97316', '#ef4444'];
+                    html += `<span style="font-size:${Math.min(w.size/2 + 14, 24)}px; font-weight:600; color:${colors[i % colors.length]};">${w.text}</span>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        }
+
+        // ---------- SEARCH & FILTER ----------
+        window.filterAnalyses = function() {
+            const query = document.getElementById('searchFilter').value.toLowerCase();
+            const cards = document.querySelectorAll('.analysis-card');
+            cards.forEach(card => {
+                const text = card.querySelector('.analysis-text')?.textContent.toLowerCase() || '';
+                const cat = card.querySelector('.category-badge')?.textContent.toLowerCase() || '';
+                card.style.display = (text.includes(query) || cat.includes(query)) ? 'block' : 'none';
+            });
+        };
+
+        // ---------- TREND CHART ----------
+        window.showTrendChart = function() {
+            if (!analysisHistory || analysisHistory.length < 2) { 
+                alert('Need at least 2 analyses for trend chart'); 
+                return; 
+            }
+            
+            const container = document.getElementById('trendContainer');
+            container.innerHTML = '<h3 style="margin-bottom:20px; font-size:1.5rem;">📈 Vibe Score Trend</h3><canvas id="trendCanvas" style="width:100%; height:300px;"></canvas>';
+            container.style.display = 'block';
+            
+            const ctx = document.getElementById('trendCanvas')?.getContext('2d');
+            if (!ctx) return;
+            
+            const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary');
+            const recentHistory = analysisHistory.slice(0, 10).reverse();
+            
+            new Chart(ctx, { 
+                type: 'line', 
+                data: { 
+                    labels: recentHistory.map((_, i) => `#${i + 1}`), 
+                    datasets: [{ 
+                        label: 'Vibe Score', 
+                        data: recentHistory.map(h => parseInt(h.vibeScore) || 75), 
+                        borderColor: '#6366f1', 
+                        backgroundColor: 'rgba(99,102,241,0.1)', 
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }] 
+                }, 
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { 
+                            labels: { 
+                                color: textColor
+                            } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 60,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            },
+                            ticks: {
+                                color: textColor,
+                                stepSize: 10
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        }
+                    }
+                } 
+            });
+        };
+
+        // ---------- THEME TOGGLE ----------
+        function toggleTheme() {
+            document.body.classList.toggle('dark'); 
+            document.body.classList.toggle('light');
+            
+            const themeLabel = document.getElementById('themeLabel');
+            const themeIcon = document.querySelector('#themeToggle i');
+            
+            if (document.body.classList.contains('dark')) { 
+                themeLabel.innerText = 'Dark'; 
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon'); 
+            } else { 
+                themeLabel.innerText = 'Light'; 
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun'); 
+            }
+            
+            lucide.createIcons(); 
+            
+            if (chartInstance && chartInstance.options && chartInstance.options.plugins && 
+                chartInstance.options.plugins.legend && chartInstance.options.plugins.legend.labels) {
+                try {
+                    chartInstance.options.plugins.legend.labels.color = getComputedStyle(document.body).getPropertyValue('--text-primary');
+                    chartInstance.update();
+                } catch (e) {
+                    console.log('Chart theme update skipped');
+                }
+            }
+        }
+
+        // ---------- UI HELPERS ----------
+        function updateLineCounter() {
+            const lines = document.getElementById('feedbackInput').value.split('\n').filter(l => l.trim()).length;
+            document.getElementById('lineCountBadge').innerText = lines + ' lines';
+        }
+        
+        function clearInputArea() { 
+            document.getElementById('feedbackInput').value = ''; 
+            updateLineCounter(); 
+        }
+
+        // ---------- MAIN ANALYSIS FUNCTION - WITH API + FIXED FALLBACK ----------
+        window.analyzeFeedback = async function() {
+            const feedbackInput = document.getElementById('feedbackInput');
+            const feedbacks = feedbackInput.value.split('\n')
+                .map(f => f.trim())
+                .filter(f => f.length > 0);
+            
+            if (!feedbacks.length) { 
+                alert('📝 Please enter feedback'); 
+                return; 
+            }
+
+            // Show loading, hide results
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('trendContainer').style.display = 'none';
+            
+            if (chartInstance) {
+                try { chartInstance.destroy(); } catch(e) {}
+                chartInstance = null;
+            }
+            
+            document.getElementById('wordCloudContainer').innerHTML = '✨ Generating word cloud...';
+
+            try {
+                // Try API first
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    }, 
+                    body: JSON.stringify({ 
+                        feedbacks,
+                        sessionId: Date.now().toString()
+                    }) 
+                });
+                
+                let data;
+                const responseText = await response.text();
+                
+                try { 
+                    data = JSON.parse(responseText); 
+                } catch(e) { 
+                    throw new Error('Invalid JSON response from server'); 
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || `API error ${response.status}`);
+                }
+
+                // Process API response
+                await processAnalysisResults(data, feedbacks);
+
+            } catch (error) {
+                console.error('API Error:', error);
+                
+                // FALLBACK: Use fixed local categorization
+                console.log('Using local fallback analysis');
+                
+                const distribution = {
+                    [CATEGORIES.APPRECIATION]: 0,
+                    [CATEGORIES.POSITIVE]: 0,
+                    [CATEGORIES.CONCERNS]: 0,
+                    [CATEGORIES.COMPLAINTS]: 0,
+                    [CATEGORIES.SUGGESTIONS]: 0,
+                    [CATEGORIES.NEUTRAL]: 0
+                };
+
+                const analysesArray = feedbacks.map(text => {
+                    const category = categorizeFeedback(text);
+                    distribution[category] = (distribution[category] || 0) + 1;
+                    
+                    let reasoning = '';
+                    if (category === CATEGORIES.NEUTRAL) {
+                        reasoning = 'Neutral/greeting detected - no sentiment';
+                    } else if (category === CATEGORIES.APPRECIATION) {
+                        reasoning = 'Strong positive sentiment detected';
+                    } else if (category === CATEGORIES.POSITIVE) {
+                        reasoning = 'Mild positive sentiment detected';
+                    } else if (category === CATEGORIES.CONCERNS) {
+                        reasoning = 'Mild concern detected';
+                    } else if (category === CATEGORIES.COMPLAINTS) {
+                        reasoning = 'Strong complaint detected';
+                    } else if (category === CATEGORIES.SUGGESTIONS) {
+                        reasoning = 'Constructive suggestion detected';
+                    }
+                    
+                    return {
+                        text: text,
+                        category: category,
+                        confidence: 85,
+                        reasoning: reasoning
+                    };
+                });
+
+                const total = feedbacks.length;
+                const vibeScore = calculateVibeScore(distribution, total);
+                const dominant = Object.keys(distribution).reduce((a, b) => 
+                    distribution[a] > distribution[b] ? a : b
+                );
+
+                const fallbackData = {
+                    overall: {
+                        vibeScore: vibeScore,
+                        dominant: dominant,
+                        distribution: distribution
+                    },
+                    analyses: analysesArray
+                };
+
+                await processAnalysisResults(fallbackData, feedbacks);
+            }
+        };
+
+        // ---------- PROCESS ANALYSIS RESULTS ----------
+        async function processAnalysisResults(data, feedbacks) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const overall = data.overall || {};
+            
+            let distribution = overall.distribution || data.sentiment_distribution || {
+                [CATEGORIES.APPRECIATION]: 0,
+                [CATEGORIES.POSITIVE]: 0,
+                [CATEGORIES.CONCERNS]: 0,
+                [CATEGORIES.COMPLAINTS]: 0,
+                [CATEGORIES.SUGGESTIONS]: 0,
+                [CATEGORIES.NEUTRAL]: 0
+            };
+
+            const cleanDistribution = {
+                [CATEGORIES.APPRECIATION]: distribution[CATEGORIES.APPRECIATION] || 0,
+                [CATEGORIES.POSITIVE]: distribution[CATEGORIES.POSITIVE] || 0,
+                [CATEGORIES.CONCERNS]: distribution[CATEGORIES.CONCERNS] || 0,
+                [CATEGORIES.COMPLAINTS]: distribution[CATEGORIES.COMPLAINTS] || 0,
+                [CATEGORIES.SUGGESTIONS]: distribution[CATEGORIES.SUGGESTIONS] || 0,
+                [CATEGORIES.NEUTRAL]: distribution[CATEGORIES.NEUTRAL] || 0
+            };
+
+            const vibeScore = overall.vibeScore || data.vibe_score || calculateVibeScore(cleanDistribution, feedbacks.length);
+            const dominant = overall.dominant || data.dominant_sentiment || 
+                Object.keys(cleanDistribution).reduce((a, b) => 
+                    cleanDistribution[a] > cleanDistribution[b] ? a : b
+                );
+
+            // Update metrics
+            document.getElementById('vibeScore').textContent = vibeScore;
+            
+            const dominantEl = document.getElementById('dominantCategory');
+            dominantEl.textContent = dominant;
+            
+            if (dominant.length > 12) {
+                dominantEl.style.fontSize = 'clamp(1.3rem, 3vw, 2.2rem)';
+            } else if (dominant.length > 8) {
+                dominantEl.style.fontSize = 'clamp(1.6rem, 3.5vw, 2.8rem)';
+            } else {
+                dominantEl.style.fontSize = 'clamp(1.8rem, 4vw, 3.2rem)';
+            }
+            
+            document.getElementById('totalFeedbackCount').textContent = feedbacks.length;
+
+            // Create chart
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary');
+            
+            const labels = Object.keys(cleanDistribution).filter(key => cleanDistribution[key] > 0);
+            const chartData = labels.map(key => cleanDistribution[key]);
+            const backgroundColors = labels.map(key => CATEGORY_COLORS[key] || '#8b5cf6');
+            
+            chartInstance = new Chart(ctx, { 
+                type: 'doughnut', 
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        data: chartData, 
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0, 
+                        hoverOffset: 15 
+                    }] 
+                }, 
+                options: { 
+                    cutout: '70%', 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                usePointStyle: true, 
+                                color: textColor,
+                                boxWidth: 8,
+                                padding: 16,
+                                font: { size: 11 }
+                            } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    } 
+                } 
+            });
+
+            // Update chart explanation
+            const explanationEl = document.getElementById('chartExplanation');
+            if (explanationEl) {
+                const parts = [];
+                if (cleanDistribution[CATEGORIES.APPRECIATION]) parts.push(`👍 A:${cleanDistribution[CATEGORIES.APPRECIATION]}`);
+                if (cleanDistribution[CATEGORIES.POSITIVE]) parts.push(`😊 P:${cleanDistribution[CATEGORIES.POSITIVE]}`);
+                if (cleanDistribution[CATEGORIES.SUGGESTIONS]) parts.push(`💡 S:${cleanDistribution[CATEGORIES.SUGGESTIONS]}`);
+                if (cleanDistribution[CATEGORIES.NEUTRAL]) parts.push(`😐 N:${cleanDistribution[CATEGORIES.NEUTRAL]}`);
+                if (cleanDistribution[CATEGORIES.CONCERNS]) parts.push(`⚠️ C:${cleanDistribution[CATEGORIES.CONCERNS]}`);
+                if (cleanDistribution[CATEGORIES.COMPLAINTS]) parts.push(`❌ CP:${cleanDistribution[CATEGORIES.COMPLAINTS]}`);
+                
+                explanationEl.innerHTML = `<i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i>
+                                          <span>${parts.join(' | ')}</span>`;
+                lucide.createIcons();
+            }
+
+            // Generate word cloud
+            generateWordCloud(feedbacks);
+
+            // Process analyses
+            let analysesArray = data.analyses || data.individual_analyses || [];
+            
+            if (!analysesArray || analysesArray.length === 0) {
+                analysesArray = feedbacks.map(text => ({
+                    text: text,
+                    category: categorizeFeedback(text),
+                    confidence: 85,
+                    reasoning: `Classified as ${categorizeFeedback(text)} based on keyword analysis`
+                }));
+            }
+
+            currentAnalysesData = analysesArray;
+            renderAnalyses(analysesArray);
+
+            // Add to history
+            addAnalysisToHistory({ 
+                vibeScore: vibeScore, 
+                dominant: dominant, 
+                distribution: cleanDistribution 
+            }, feedbacks.length, analysesArray);
+            
+            lucide.createIcons();
+        }
+
+        // ---------- INITIALIZATION ----------
+        window.onload = function() {
+            console.log('Dashboard initializing...');
+            
+            document.body.classList.add('dark'); 
+            document.body.classList.remove('light');
+            
+            lucide.createIcons();
+            loadHistoryFromStorage();
+            
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+            
+            const clearBtn = document.getElementById('clearInputBtn');
+            if (clearBtn) clearBtn.addEventListener('click', clearInputArea);
+            
+            const feedbackInput = document.getElementById('feedbackInput');
+            if (feedbackInput) feedbackInput.addEventListener('input', updateLineCounter);
+            
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeFeedback);
+            
+            const langBtn = document.getElementById('langDropdownBtn');
+            if (langBtn) {
+                langBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const menu = document.getElementById('langMenu');
+                    if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                });
+            }
+            
+            const historyBtn = document.getElementById('historyButton');
+            if (historyBtn) {
+                historyBtn.addEventListener('click', function(e) { 
+                    e.stopPropagation(); 
+                    const p = document.getElementById('historyPanel'); 
+                    if (p) p.style.display = p.style.display === 'block' ? 'none' : 'block'; 
+                });
+            }
+            
+            const clearHistoryBtn = document.getElementById('historyClearAllBtn');
+            if (clearHistoryBtn) {
+                clearHistoryBtn.addEventListener('click', function(e) { 
+                    e.stopPropagation(); 
+                    clearAllHistory(); 
+                });
+            }
+            
+            const exportHistoryBtn = document.getElementById('historyExportAllBtn');
+            if (exportHistoryBtn) {
+                exportHistoryBtn.addEventListener('click', function(e) { 
+                    e.stopPropagation(); 
+                    exportAllHistory(); 
+                });
+            }
+            
+            window.addEventListener('click', function(e) { 
+                if (!e.target.closest('.history-dropdown')) {
+                    const panel = document.getElementById('historyPanel');
+                    if (panel) panel.style.display = 'none';
+                }
+                if (!e.target.closest('.lang-dropdown')) {
+                    const menu = document.getElementById('langMenu');
+                    if (menu) menu.style.display = 'none';
+                }
+            });
+            
+            updateLineCounter(); 
+            setLanguage('en');
+            
+            console.log('Dashboard initialized successfully');
+        };
+    </script>
+</body>
+</html>
